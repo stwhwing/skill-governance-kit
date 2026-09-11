@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skillgov"
+version = "0.1.0"
+description = "Read-only, deterministic skill-governance toolkit for dual AI-agent skill ecosystems (Hermes + OpenClaw)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "skill-governance-kit contributors" }]
+keywords = ["ai-agent", "skills", "governance", "audit", "read-only", "inventory"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4", "mypy>=1.8"]
+
+[project.scripts]
+skillgov = "skillgov.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/stwhwing/skill-governance-kit"
+Repository = "https://github.com/stwhwing/skill-governance-kit"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

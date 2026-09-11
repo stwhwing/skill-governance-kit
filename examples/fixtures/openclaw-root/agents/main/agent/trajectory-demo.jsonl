@@ -1,0 +1,5 @@
+{"type":"session_snapshot","data":{"skills":{"entries":{"demo-alpha":{"name":"demo-alpha"},"demo-gamma":{"name":"demo-gamma"},"legacy-ghost":{"name":"legacy-ghost"}}},"messages":[]}}
+{"type":"message","data":{"messages":[{"role":"assistant","content":[{"type":"toolCall","toolName":"skill_view","arguments":{"path":"workspace/skills/demo-alpha/SKILL.md"}}]}]}}
+{"type":"message","data":{"messages":[{"role":"assistant","content":[{"type":"toolCall","toolName":"skill_view","arguments":{"path":"workspace/skills/demo-gamma/SKILL.md"}}]}]}}
+{"type":"message","data":{"messages":[{"role":"user","content":[{"type":"text","text":"please read skills/demo-gamma/SKILL.md before answering"}]}]}}
+{ this is not valid json

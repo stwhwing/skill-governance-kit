@@ -1,0 +1,14 @@
+{
+  "skills": {
+    "demo-alpha": {
+      "source": "local",
+      "version": "1.0.0",
+      "installedAt": "2025-01-01T00:00:00Z"
+    },
+    "demo-gamma": {
+      "source": "local",
+      "version": "1.2.0",
+      "installedAt": "2025-01-02T00:00:00Z"
+    }
+  }
+}
