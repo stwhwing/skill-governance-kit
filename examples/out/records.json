@@ -2,7 +2,7 @@
   "records": [
     {
       "category": ".archive",
-      "created_at": "2026-09-11T02:09:51Z",
+      "created_at": null,
       "description": "Archived demo skill retained for evolution evidence.",
       "drift": null,
       "ecosystem": "hermes",
@@ -26,7 +26,7 @@
     },
     {
       "category": "demo-alpha",
-      "created_at": "2026-09-11T02:09:51Z",
+      "created_at": null,
       "description": "Alpha demo skill for governance tests.",
       "drift": "clean",
       "ecosystem": "hermes",
@@ -56,7 +56,7 @@
     },
     {
       "category": "demo-beta",
-      "created_at": "2026-09-11T02:09:51Z",
+      "created_at": null,
       "description": "Beta demo skill that is never used in the fixture window.",
       "drift": null,
       "ecosystem": "hermes",
@@ -86,7 +86,7 @@
     },
     {
       "category": "demo-alpha",
-      "created_at": "2026-09-11T02:09:51Z",
+      "created_at": null,
       "description": "Alpha demo skill for governance tests.",
       "drift": "clean",
       "ecosystem": "openclaw",
@@ -116,7 +116,7 @@
     },
     {
       "category": "demo-gamma",
-      "created_at": "2026-09-11T02:09:51Z",
+      "created_at": null,
       "description": "Gamma demo skill exercised through trajectory evidence.",
       "drift": null,
       "ecosystem": "openclaw",

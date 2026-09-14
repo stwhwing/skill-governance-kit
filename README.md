@@ -19,11 +19,50 @@ writes to the trees it inspects; writing actions are explicitly out of scope.
 - **One redaction gate.** Every outward-facing string passes through
   `skillgov.sanitize.sanitize()` / `sanitize_obj()`. There is no bypass.
 - **Deterministic & idempotent.** Two runs over the same input produce
-  byte-identical JSON, except for a single `generated_at` field. A stable
-  `records.json` (the normalized store artifact) carries no timestamp at all.
+  byte-identical JSON, except for the two environment-dependent fields spelled
+  out under [Determinism](#determinism). The committed `examples/out/**`
+  snapshots are stored in their environment-free form, and CI guards that.
 - **Degrades, never crashes.** A missing usage file, a malformed JSONL line or an
   empty directory is recorded in `RunResult.warnings` and echoed to stderr; the
   run still finishes.
+
+## Determinism
+
+Two runs over the same input yield byte-identical output **except for exactly
+two environment-dependent fields**:
+
+| Field | Meaning | Normalised form |
+|---|---|---|
+| `generated_at` | wall-clock time of the run (`utc_now_iso`) | removed from committed snapshots |
+| `created_at` | best-effort file creation time of a `SKILL.md`: `st_birthtime` where the OS exposes it, `st_ctime` on Windows, `null` otherwise (POSIX without `st_birthtime`) | `null` |
+
+Every other field is byte-stable. The `created_at` value changes on every
+checkout and is `null` on many POSIX hosts, so it must never take part in a
+comparison nor be committed as a real timestamp.
+
+对应口径：`generated_at`（运行时刻）与 `created_at`（文件创建时间，OS 尽力而为，
+POSIX 常为 `null`）是**仅有的两个环境相关字段**，其余字段必须逐字节稳定。
+
+A single, pure helper in `src/skillgov/determinism.py` implements the contract:
+`normalize_env_dependent(payload)` returns a deep copy with every `created_at`
+set to `null` and `generated_at` removed (or replaced by a fixed placeholder,
+if a caller asks for it). A reproducible regenerator reuses it:
+
+```bash
+python scripts/regen_examples.py   # rewrites examples/out/** deterministically
+```
+
+`scripts/regen_examples.py` runs the real pipeline over `tests/fixtures/**` and
+stores every snapshot under `examples/out/**` in normalised form — `created_at`
+is `null` everywhere and `generated_at` is gone, with each view's `*.md`
+rendered from that same normalised view. Running it on any operating system
+produces an identical `examples/out/**`.
+
+The test-suite then **guards** this: a freshly generated run must match the
+committed snapshots *after* normalisation, and no artifact under
+`examples/out/**` may contain a non-`null` `created_at` (or any `generated_at`)
+— so regenerating on a laptop and committing OS-specific timestamps fails CI on
+every platform in the matrix.
 
 ## Install
 

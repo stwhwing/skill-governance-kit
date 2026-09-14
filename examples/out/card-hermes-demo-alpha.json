@@ -6,7 +6,6 @@
     "口径声明：全程只读采集；缺失数据源将降级并把原因记录到 warnings。",
     "口径声明：同输入重复运行，输出除 generated_at 外逐字节一致（幂等）。"
   ],
-  "generated_at": "2026-09-14T01:48:17Z",
   "sections": [
     {
       "heading": "身份",
@@ -37,7 +36,7 @@
         ],
         [
           "created_at",
-          "2026-09-11T02:09:51Z"
+          null
         ],
         [
           "installed_at",

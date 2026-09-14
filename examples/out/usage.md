@@ -1,10 +1,8 @@
 # 技能使用清单 (usage)
 
-**generated_at**: 2026-09-14T01:48:16Z
-
-- **window**: all-time
 - **total**: 5
 - **used**: 3
+- **window**: all-time
 - **zero_usage**: 2
 
 ## 零使用清单 (window=all-time)

@@ -8,7 +8,9 @@
 * **S4-2** — archive / exclusion rules are matched per *path segment*, not as
   raw substrings of the whole relative path (all three adapters unified).
 * **S4-3** — ``examples/out/**`` is regenerated from the current code and
-  therefore matches a fresh run (including ``records.json``).
+  therefore matches a fresh run *once the two environment-dependent fields are
+  normalised* (``created_at`` -> ``null``, ``generated_at`` -> dropped), and the
+  committed snapshots are guarded against leaking an OS-specific timestamp.
 """
 
 from __future__ import annotations
@@ -23,16 +25,19 @@ from skillgov.adapters.hermes import HermesAdapter
 from skillgov.adapters.openclaw import OpenClawAdapter
 from skillgov.adapters.workbuddy import WorkBuddyAdapter
 from skillgov.cli.main import main
+from skillgov.determinism import find_env_dependent, normalize_env_dependent
 from skillgov.logging_setup import NullReporter
 from skillgov.report.render import (
     CALIBER_FOOTER,
     WORKBUDDY_CALIBER_LINE,
     caliber_footer,
+    render_view,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VIEWS = ("inventory", "usage", "mirror", "report")
 V01_FOOTER_LINES = 5
+EXAMPLE_VIEWS_COMPARED = ("inventory", "mirror", "report")
 
 
 def _write_skill(dir_path: Path, name: str) -> None:
@@ -298,24 +303,8 @@ def test_workbuddy_skip_segments_are_anchored() -> None:
 
 
 # ----------------------------------------------------------------- S4-3 -------
-def _strip_volatile(doc: dict) -> dict:
-    doc = dict(doc)
-    doc.pop("generated_at", None)
-    doc.pop("footer", None)
-    for section in doc.get("sections", []):
-        for row in section.get("rows", []):
-            if len(row) >= 7:
-                row[6] = "<CTIME>"
-    return doc
-
-
-def test_examples_out_is_regenerated_and_consistent(
-    hermes_root, openclaw_root, tmp_path
-) -> None:
-    examples = REPO_ROOT / "examples" / "out"
-    assert (examples / "records.json").is_file(), "examples/out must ship records.json"
-
-    fresh = tmp_path / "out"
+def _run_fresh_report(out: Path, hermes_root: Path, openclaw_root: Path) -> None:
+    """Generate a fresh report bundle identical to the committed examples."""
     assert (
         main(
             [
@@ -323,22 +312,43 @@ def test_examples_out_is_regenerated_and_consistent(
                 "--hermes-root", str(hermes_root),
                 "--openclaw-root", str(openclaw_root),
                 "--since", "2025-01-01",
-                "--out", str(fresh),
+                "--out", str(out),
                 "--format", "md,json",
             ]
         )
         == 0
     )
 
-    # records.json is timestamp-free -> must be byte identical
-    assert (examples / "records.json").read_text(encoding="utf-8") == (
-        fresh / "records.json"
-    ).read_text(encoding="utf-8")
 
-    for view in ("inventory", "mirror", "report"):
-        got = _strip_volatile(json.loads((fresh / f"{view}.json").read_text(encoding="utf-8")))
-        base = _strip_volatile(json.loads((examples / f"{view}.json").read_text(encoding="utf-8")))
-        assert got == base, f"examples/out/{view}.json is stale"
+def _normalized_json(path: Path) -> object:
+    """Parse *path* and strip the two environment-dependent fields."""
+    return normalize_env_dependent(json.loads(path.read_text(encoding="utf-8")))
+
+
+def test_examples_out_is_regenerated_and_consistent(
+    hermes_root, openclaw_root, tmp_path
+) -> None:
+    """A fresh run equals the committed snapshots *after* normalisation.
+
+    The comparison is deliberately blind to the two environment-dependent
+    fields (``created_at`` / ``generated_at``) so it holds on ubuntu and windows
+    alike (see README §Determinism).
+    """
+    examples = REPO_ROOT / "examples" / "out"
+    assert (examples / "records.json").is_file(), "examples/out must ship records.json"
+
+    fresh = tmp_path / "out"
+    _run_fresh_report(fresh, hermes_root, openclaw_root)
+
+    # records.json carries no run timestamp -> identical once created_at is nulled
+    assert _normalized_json(examples / "records.json") == _normalized_json(
+        fresh / "records.json"
+    ), "examples/out/records.json is stale"
+
+    for view in EXAMPLE_VIEWS_COMPARED:
+        assert _normalized_json(examples / f"{view}.json") == _normalized_json(
+            fresh / f"{view}.json"
+        ), f"examples/out/{view}.json is stale"
 
     # the committed artifacts carry the v0.1 (five-line) footer
     inventory = json.loads((examples / "inventory.json").read_text(encoding="utf-8"))
@@ -349,8 +359,61 @@ def test_examples_out_is_regenerated_and_consistent(
     assert usage["summary"]["window"] == "all-time"
 
 
+def test_examples_out_are_environment_free() -> None:
+    """Guard: no OS-specific timestamp may be committed under examples/out/**.
+
+    Every ``created_at`` must be ``null`` and no ``generated_at`` may survive,
+    so a contributor cannot regenerate the snapshots on their machine and leak a
+    local checkout time back into the repository.
+    """
+    examples = REPO_ROOT / "examples" / "out"
+    json_files = sorted(examples.glob("*.json"))
+    assert json_files, "examples/out must ship JSON snapshots"
+    for path in json_files:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        leaks = find_env_dependent(payload)
+        assert leaks == [], f"{path.name} carries environment-dependent values: {leaks}"
+
+    # each view markdown must be exactly the render of its normalised JSON, so
+    # the two representations cannot drift apart.
+    for view in VIEWS:
+        view_json = json.loads((examples / f"{view}.json").read_text(encoding="utf-8"))
+        assert (examples / f"{view}.md").read_text(encoding="utf-8") == render_view(
+            view_json, "md"
+        ), view
+
+
+def test_examples_out_consistent_when_created_at_is_absent(
+    monkeypatch, hermes_root, openclaw_root, tmp_path
+) -> None:
+    """CI's POSIX failure mode: ``_birth_time`` yields ``None`` everywhere.
+
+    When the platform exposes no file creation time, a fresh run must still
+    reproduce the committed snapshots exactly.
+    """
+    from skillgov.adapters import fs_scan
+
+    monkeypatch.setattr(fs_scan, "_birth_time", lambda stat_result: None)
+
+    fresh = tmp_path / "out"
+    _run_fresh_report(fresh, hermes_root, openclaw_root)
+
+    fresh_records = json.loads((fresh / "records.json").read_text(encoding="utf-8"))
+    assert fresh_records["records"], "expected records in the fresh run"
+    assert all(row["created_at"] is None for row in fresh_records["records"])
+
+    examples = REPO_ROOT / "examples" / "out"
+    assert _normalized_json(examples / "records.json") == _normalized_json(
+        fresh / "records.json"
+    )
+    for view in EXAMPLE_VIEWS_COMPARED:
+        assert _normalized_json(examples / f"{view}.json") == _normalized_json(
+            fresh / f"{view}.json"
+        ), view
+
+
 def test_examples_out_reports_have_five_line_footers() -> None:
     examples = REPO_ROOT / "examples" / "out"
-    for name in ("inventory", "usage", "mirror", "report"):
+    for name in VIEWS:
         doc = json.loads((examples / f"{name}.json").read_text(encoding="utf-8"))
         assert tuple(doc["footer"]) == CALIBER_FOOTER, name
