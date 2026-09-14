@@ -31,6 +31,7 @@ class DegradeReason:
     BAD_JSON = "bad_json"
     BAD_JSONL = "bad_jsonl"
     EMPTY_DIR = "empty_dir"
+    EMPTY_USAGE_LOG = "empty_usage_log"
     TRUNCATED_INPUT = "truncated_input"
     NO_SOURCES = "no_sources"
 

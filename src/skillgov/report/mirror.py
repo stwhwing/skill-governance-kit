@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..normalize.model import SkillRecord
-from .render import base_view
+from .render import base_view, caliber_footer, resolve_include_workbuddy
 
 COLUMNS = ["name", "hermes_skill_id", "openclaw_skill_id", "drift"]
 
@@ -15,10 +15,12 @@ def build_mirror(
     *,
     generated_at: str,
     warnings: Sequence[str] = (),
+    include_workbuddy_caliber: Optional[bool] = None,
 ) -> dict[str, object]:
     """Build the mirror view listing every cross-ecosystem twin pair."""
+    ordered = sorted(records, key=lambda item: item.skill_id)
     by_name: dict[str, dict[str, SkillRecord]] = {}
-    for record in sorted(records, key=lambda item: item.skill_id):
+    for record in ordered:
         by_name.setdefault(record.name, {})[record.ecosystem] = record
 
     pairs: list[list[object]] = []
@@ -38,7 +40,13 @@ def build_mirror(
             unknown += 1
         pairs.append([name, hermes.skill_id, openclaw.skill_id, drift])
 
-    view = base_view("双生态镜像对照 (mirror)", generated_at, warnings=warnings)
+    include_workbuddy = resolve_include_workbuddy(ordered, include_workbuddy_caliber)
+    view = base_view(
+        "双生态镜像对照 (mirror)",
+        generated_at,
+        warnings=warnings,
+        footer=caliber_footer(include_workbuddy),
+    )
     view["summary"] = {
         "pairs": len(pairs),
         "clean": clean,

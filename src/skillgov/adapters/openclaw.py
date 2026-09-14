@@ -24,7 +24,7 @@ from ..config import (
 from ..errors import DegradeReason
 from ..logging_setup import Reporter
 from ..normalize.model import SkillRecord, SourceEvidence, UsageRecord
-from .fs_scan import scan_skills, scanned_to_record
+from .fs_scan import ARCHIVE_MARKERS, scan_skills, scanned_to_record
 from .trajectory import (
     TrajectoryParseResult,
     iter_trajectory_files,
@@ -66,7 +66,7 @@ class OpenClawAdapter:
                 DegradeReason.MISSING_SKILLS_DIR, OPENCLAW_SKILLS_SUBPATH
             )
             return []
-        scanned = scan_skills(base, archive_markers=(".archived",))
+        scanned = scan_skills(base, archive_markers=ARCHIVE_MARKERS)
         if not scanned:
             self.reporter.degrade(DegradeReason.EMPTY_DIR, OPENCLAW_SKILLS_SUBPATH)
         return [

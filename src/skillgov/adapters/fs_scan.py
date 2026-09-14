@@ -10,6 +10,7 @@ timestamp where the platform exposes one, and classifies the skill as
 from __future__ import annotations
 
 import datetime as _dt
+import fnmatch
 import os
 import re
 from dataclasses import dataclass
@@ -21,12 +22,39 @@ from ..store.ids import make_skill_id
 
 SKILL_FILENAME = "SKILL.md"
 EXCLUDED_DIR_NAMES = frozenset({"node_modules", "__pycache__", ".git", ".hg", ".svn"})
-DEFAULT_ARCHIVE_MARKERS: tuple[str, ...] = (".archive", ".archived")
+
+# Archive detection is *segment based*: a whole path segment must match one of
+# these patterns (``.archive`` exactly, or a ``.archived*`` name). Substring
+# matching on the relative path was a false-positive source — a legitimate
+# directory such as ``plain.archive-helper`` must stay ``active``.
+# All three ecosystem adapters use this single, shared marker set.
+ARCHIVE_MARKERS: tuple[str, ...] = (".archive", ".archived*")
+DEFAULT_ARCHIVE_MARKERS: tuple[str, ...] = ARCHIVE_MARKERS
 
 _GENERATED_FROM_RE = re.compile(
     r"generated[_-]?from['\"]?\s*[:=]\s*['\"]?([^\n\"']+)",
     re.IGNORECASE,
 )
+
+
+def path_is_archived(
+    rel_dir: str, patterns: tuple[str, ...] = ARCHIVE_MARKERS
+) -> bool:
+    """Whether any *path segment* of *rel_dir* marks the skill archived.
+
+    Matching is per segment with :func:`fnmatch.fnmatchcase` (case-sensitive,
+    whole-segment), so only a segment that *is* ``.archive`` or *starts with*
+    ``.archived`` counts. Substrings inside otherwise-normal directory names no
+    longer trigger the archive classification.
+    """
+    normalised = str(rel_dir).replace("\\", "/")
+    for segment in normalised.split("/"):
+        if not segment:
+            continue
+        for pattern in patterns:
+            if fnmatch.fnmatchcase(segment, pattern):
+                return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -131,11 +159,7 @@ def scan_skills(
         name = (frontmatter.get("name") or Path(dirpath).name).strip()
 
         category = rel_dir.split("/")[0] if rel_dir else "(root)"
-        presence = (
-            "archived"
-            if any(marker in rel_dir for marker in archive_markers)
-            else "active"
-        )
+        presence = "archived" if path_is_archived(rel_dir, archive_markers) else "active"
 
         generated_from = frontmatter.get("generated_from") or frontmatter.get(
             "generated-from"

@@ -6,5 +6,12 @@ from .base import SkillAdapter
 from .fs_scan import scan_skills
 from .hermes import HermesAdapter
 from .openclaw import OpenClawAdapter
+from .workbuddy import WorkBuddyAdapter
 
-__all__ = ["SkillAdapter", "scan_skills", "HermesAdapter", "OpenClawAdapter"]
+__all__ = [
+    "SkillAdapter",
+    "scan_skills",
+    "HermesAdapter",
+    "OpenClawAdapter",
+    "WorkBuddyAdapter",
+]

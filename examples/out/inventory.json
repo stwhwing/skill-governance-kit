@@ -6,7 +6,7 @@
     "口径声明：全程只读采集；缺失数据源将降级并把原因记录到 warnings。",
     "口径声明：同输入重复运行，输出除 generated_at 外逐字节一致（幂等）。"
   ],
-  "generated_at": "2026-09-11T02:15:16Z",
+  "generated_at": "2026-09-14T01:48:15Z",
   "sections": [
     {
       "columns": [
@@ -33,7 +33,7 @@
           "archived",
           ".archive",
           "skills/.archive/demo-old",
-          "2026-09-11T02:13:24Z",
+          "2026-09-11T02:09:51Z",
           "0.1.0",
           "Archived demo skill retained for evolution evidence.",
           0,
@@ -48,7 +48,7 @@
           "active",
           "demo-alpha",
           "skills/demo-alpha",
-          "2026-09-11T02:13:24Z",
+          "2026-09-11T02:09:51Z",
           "1.0.0",
           "Alpha demo skill for governance tests.",
           7,
@@ -63,7 +63,7 @@
           "active",
           "demo-beta",
           "skills/demo-beta",
-          "2026-09-11T02:13:24Z",
+          "2026-09-11T02:09:51Z",
           "2.0.0",
           "Beta demo skill that is never used in the fixture window.",
           0,
@@ -78,7 +78,7 @@
           "active",
           "demo-alpha",
           "workspace/skills/demo-alpha",
-          "2026-09-11T02:13:24Z",
+          "2026-09-11T02:09:51Z",
           "1.0.0",
           "Alpha demo skill for governance tests.",
           1,
@@ -93,7 +93,7 @@
           "active",
           "demo-gamma",
           "workspace/skills/demo-gamma",
-          "2026-09-11T02:13:24Z",
+          "2026-09-11T02:09:51Z",
           "1.2.0",
           "Gamma demo skill exercised through trajectory evidence.",
           1,

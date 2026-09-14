@@ -5,9 +5,9 @@ It answers the questions that a skill zoo always raises: what do I have, what is
 actually used, where did each skill come from, and which skills are mirrored
 across two agents?
 
-`skillgov` currently understands two ecosystems — **Hermes** and **OpenClaw** —
-and normalizes both into a single, comparable schema. It never writes to the
-trees it inspects; writing actions are explicitly out of scope for v0.1.
+`skillgov` currently understands three ecosystems — **Hermes**, **OpenClaw** and
+**WorkBuddy** — and normalizes them into a single, comparable schema. It never
+writes to the trees it inspects; writing actions are explicitly out of scope.
 
 ## Why it is safe to run on production hosts
 
@@ -64,8 +64,11 @@ root*, never an absolute machine location.
 
 ## Caliber declaration (口径声明)
 
-These definitions are fixed into every report footer and are part of the
-contract:
+These definitions are injected into the report footer for **each ecosystem
+covered by the run**; the WorkBuddy line therefore appears only when the
+WorkBuddy ecosystem is part of the run (its `skills` directory exists, so
+`workbuddy` enters `RunResult.sources` — independently of whether any record or
+a usable ledger was produced). They are part of the contract:
 
 - **Hermes usage** = `skill_view` standard loading. Direct file reads
   (`read_file`) and terminal access are **not** counted.
@@ -75,7 +78,64 @@ contract:
   `use_count`.
 - **OpenClaw session-snapshot catalogs** (the `skills.entries` listing embedded
   in a trajectory) are **never** counted as usage.
+- **WorkBuddy usage** (v0.2) = the number of *usage days* in the
+  `usage-log.json` ledger (`len(recentDates)`) — **counted in days, not in
+  invocation times**. The ledger does not track views or patches, so
+  `view_count` / `patch_count` stay `0`. Ledger keys that match no skill
+  directory are reported as `orphan_ledger_entry` warnings and produce no
+  record.
+- **WorkBuddy 口径声明（第 6 条）**：`use_count` = `usage-log.json` 台账
+  `recentDates` 的**使用天数**（**按使用天数计**，非调用次数）；台账不跟踪
+  view/patch，故 `view_count` / `patch_count` 恒为 `0`；`last_used_at` =
+  `lastUsedDate` 当日 `00:00:00Z`；台账键在技能树中无对应目录者记
+  `orphan_ledger_entry` 告警且不生成记录。
 - **Read-only**: missing sources degrade with a recorded reason.
+
+## WorkBuddy (v0.2)
+
+WorkBuddy support is **opt-in**: passing `--workbuddy-root <root>` adds the
+ecosystem to the run; omitting it keeps the output byte-identical to a
+Hermes+OpenClaw-only run.
+
+- **Inventory**: `<workbuddy-root>/skills/**/SKILL.md` is walked recursively.
+  Non-skill auxiliary entries (segments starting with `_`) and backup
+  directories (`*.bak-*`) are skipped; the shared archive markers (`.archive/`,
+  `*.archived`) mark a skill `archived`.
+- **Archive matching is per path segment** (Hermes, OpenClaw and WorkBuddy use
+  the same rule): a segment must *equal* `.archive` or *start with* `.archived`,
+  so a legitimate directory such as `plain.archive-helper` stays `active` —
+  raw substring matching is deliberately not used.
+- **Usage**: the first-hand ledger `<workbuddy-root>/usage-log.json` maps
+  ledger keys (skill directory names) to `firstSeenDate` / `recentDates` /
+  `lastUsedDate`. See caliber item 6 above for the exact mapping; the ledger is
+  a first-hand source, so `confidence` is always `A`. `provenance()` reuses the
+  same filtered mapping as `usage()`, so a `type != "skill"` entry or an orphan
+  key never attaches evidence to a skill whose usage stays `none`.
+- **Scope boundary**: v0.2 covers the *user skills directory only*. Parsing of
+  `audit-log/*.jsonl` (a potential corroboration source) and the
+  `plugins/cache` / `connectors` trees is deliberately deferred.
+  （v0.2 边界：仅覆盖用户技能目录，不含 `plugins/cache` 与 `connectors`；
+  `audit-log/*.jsonl` 解析留待后续，作为旁证源。）
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs the full test suite on every push and pull
+request across a matrix of `ubuntu-latest` / `windows-latest` and Python
+3.11 / 3.13. Only `pytest` is installed — the project itself has zero runtime
+dependencies, so CI stays fast and hermetic:
+
+```bash
+python -m pip install pytest
+python -m pytest -q
+```
+
+## The `--assert-readonly` switch
+
+The collector is read-only by construction. `--assert-readonly` adds a
+defence-in-depth guarantee: every configured root is fingerprinted (file
+count + bytes + `<relpath, size, mtime>` digest) before and after the run, and
+any difference aborts with exit code 1 (an integrity violation is treated as an
+internal error, not a degradation).
 
 ## Exit codes
 
@@ -183,10 +243,11 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-The suite covers the filesystem scanner, both adapters (including the trajectory
-container split), the redaction gate, the read-only guard, all four report views
+The suite covers the filesystem scanner, all three adapters (including the
+trajectory container split and the WorkBuddy ledger caliber), the redaction
+gate, the read-only guard (including `--assert-readonly`), all four report views
 and the CLI end-to-end (subcommands, idempotency and exit codes). Fixtures are
-synthetic only: `demo-*` skill names and fixed timestamps.
+synthetic only: `demo-*` / `wb-*` skill names and fixed timestamps.
 
 ## License
 

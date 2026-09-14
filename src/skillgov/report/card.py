@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, Sequence
 
 from ..normalize.model import SkillRecord
-from .render import base_view
+from .render import base_view, caliber_footer, resolve_include_workbuddy
 
 
 def find_record(
@@ -24,10 +24,17 @@ def build_card(
     *,
     generated_at: str,
     warnings: Sequence[str] = (),
+    include_workbuddy_caliber: Optional[bool] = None,
 ) -> dict[str, object]:
     """Build a single-skill card view; ``sections`` stays empty when not found."""
     record = find_record(records, skill_id)
-    view = base_view(f"技能档案卡 (card): {skill_id}", generated_at, warnings=warnings)
+    include_workbuddy = resolve_include_workbuddy(records, include_workbuddy_caliber)
+    view = base_view(
+        f"技能档案卡 (card): {skill_id}",
+        generated_at,
+        warnings=warnings,
+        footer=caliber_footer(include_workbuddy),
+    )
     if record is None:
         view["summary"] = {"found": False, "skill_id": skill_id}
         view["sections"] = [

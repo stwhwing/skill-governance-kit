@@ -192,10 +192,100 @@ def test_degenerate_empty_root_exit_three(degenerate_root, tmp_path) -> None:
     assert code == 3
 
 
+def test_three_ecosystems_report(workbuddy_root, hermes_root, openclaw_root, tmp_path) -> None:
+    """v0.2: hermes + openclaw + workbuddy in one run."""
+    out = tmp_path / "out"
+    common = [
+        "--hermes-root",
+        str(hermes_root),
+        "--openclaw-root",
+        str(openclaw_root),
+        "--workbuddy-root",
+        str(workbuddy_root),
+        "--out",
+        str(out),
+        "--format",
+        "json",
+    ]
+    assert main(["report", *common]) == 0
+
+    inventory = json.loads((out / "inventory.json").read_text(encoding="utf-8"))
+    # hermes 3 + openclaw 2 + workbuddy 3 (wb-demo, wb-idle, archive/wb-old).
+    assert inventory["summary"]["total"] == 8
+    assert inventory["summary"]["workbuddy"] == 3
+
+    records = json.loads((out / "records.json").read_text(encoding="utf-8"))
+    ecosystems = {record["ecosystem"] for record in records["records"]}
+    assert ecosystems == {"hermes", "openclaw", "workbuddy"}
+    by_id = {record["skill_id"]: record for record in records["records"]}
+    wb = by_id["workbuddy:wb-demo"]
+    assert wb["usage"]["use_count"] == 3  # usage DAYS, not invocation times
+    assert wb["usage"]["view_count"] == 0
+    assert wb["usage"]["patch_count"] == 0
+    assert wb["usage"]["last_used_at"] == "2025-04-05T00:00:00Z"
+    assert wb["usage"]["evidence_source"] == "usage_log"
+    assert wb["usage"]["confidence"] == "A"
+    assert any(
+        ev["kind"] == "usage_log" for ev in wb["provenance"]
+    )
+    joined = " ".join(records["warnings"])
+    assert "orphan_ledger_entry" in joined
+    assert "wb-orphan" in joined
+
+    usage = json.loads((out / "usage.json").read_text(encoding="utf-8"))
+    used_rows = [row for section in usage["sections"] for row in section["rows"]]
+    assert any(row[0] == "workbuddy:wb-demo" for row in used_rows)
+
+
+def test_workbuddy_absent_keeps_v01_output(hermes_root, openclaw_root, tmp_path) -> None:
+    """Without --workbuddy-root no workbuddy records or warnings appear."""
+    out = tmp_path / "out"
+    assert (
+        main(
+            [
+                "inventory",
+                "--hermes-root",
+                str(hermes_root),
+                "--openclaw-root",
+                str(openclaw_root),
+                "--out",
+                str(out),
+                "--format",
+                "json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads((out / "inventory.json").read_text(encoding="utf-8"))
+    assert "workbuddy" not in payload["summary"]
+    assert all("workbuddy" not in warning for warning in payload["warnings"])
+
+
+def test_workbuddy_missing_skills_dir_degrades(tmp_path, capsys) -> None:
+    out = tmp_path / "out"
+    code = main(
+        [
+            "inventory",
+            "--workbuddy-root",
+            str(tmp_path / "no-such-root"),
+            "--out",
+            str(out),
+            "--format",
+            "json",
+        ]
+    )
+    # workbuddy alone provides no usable source -> exit 3, no artifacts.
+    assert code == 3
+    assert not (out / "inventory.json").exists()
+    captured = capsys.readouterr()
+    assert "missing_skills_dir" in captured.err
+    assert "workbuddy" in captured.err
+
+
 def test_subprocess_version_and_run(hermes_root, openclaw_root, tmp_path) -> None:
     version = _run_subprocess(["--version"], REPO_ROOT)
     assert version.returncode == 0
-    assert "0.1.0" in (version.stdout + version.stderr)
+    assert "0.2.0" in (version.stdout + version.stderr)
 
     run = _run_subprocess(
         [

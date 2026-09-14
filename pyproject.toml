@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skillgov"
-version = "0.1.0"
-description = "Read-only, deterministic skill-governance toolkit for dual AI-agent skill ecosystems (Hermes + OpenClaw)."
+version = "0.2.0"
+description = "Read-only, deterministic skill-governance toolkit for AI-agent skill ecosystems (Hermes, OpenClaw, WorkBuddy)."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

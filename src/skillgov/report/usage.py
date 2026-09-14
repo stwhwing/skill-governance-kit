@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, Sequence
 
 from ..normalize.model import SkillRecord
-from .render import base_view
+from .render import base_view, caliber_footer, resolve_include_workbuddy
 
 COLUMNS = [
     "skill_id",
@@ -53,6 +53,7 @@ def build_usage(
     generated_at: str,
     since: Optional[str] = None,
     warnings: Sequence[str] = (),
+    include_workbuddy_caliber: Optional[bool] = None,
 ) -> dict[str, object]:
     """Build the usage view: a zero-usage shortlist plus the used set."""
     ordered = sorted(records, key=lambda record: record.skill_id)
@@ -60,7 +61,13 @@ def build_usage(
     zero = [record for record in ordered if not _is_recent(record, since)]
 
     window = since if since is not None else "all-time"
-    view = base_view("技能使用清单 (usage)", generated_at, warnings=warnings)
+    include_workbuddy = resolve_include_workbuddy(ordered, include_workbuddy_caliber)
+    view = base_view(
+        "技能使用清单 (usage)",
+        generated_at,
+        warnings=warnings,
+        footer=caliber_footer(include_workbuddy),
+    )
     view["summary"] = {
         "window": window,
         "total": len(ordered),

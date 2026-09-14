@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..normalize.model import SkillRecord
-from .render import base_view
+from .render import base_view, caliber_footer, resolve_include_workbuddy
 
 COLUMNS = [
     "skill_id",
@@ -47,6 +47,7 @@ def build_inventory(
     *,
     generated_at: str,
     warnings: Sequence[str] = (),
+    include_workbuddy_caliber: Optional[bool] = None,
 ) -> dict[str, object]:
     """Build the inventory view (one row per skill, sorted by ``skill_id``)."""
     ordered = sorted(records, key=lambda record: record.skill_id)
@@ -58,14 +59,24 @@ def build_inventory(
     for record in ordered:
         by_ecosystem[record.ecosystem] = by_ecosystem.get(record.ecosystem, 0) + 1
 
-    view = base_view("技能全貌清单 (inventory)", generated_at, warnings=warnings)
-    view["summary"] = {
+    include_workbuddy = resolve_include_workbuddy(ordered, include_workbuddy_caliber)
+    view = base_view(
+        "技能全貌清单 (inventory)",
+        generated_at,
+        warnings=warnings,
+        footer=caliber_footer(include_workbuddy),
+    )
+    summary: dict[str, object] = {
         "total": len(ordered),
         "active": active,
         "archived": archived,
         "hermes": by_ecosystem.get("hermes", 0),
         "openclaw": by_ecosystem.get("openclaw", 0),
     }
+    # Keep v0.1 output byte-identical when WorkBuddy is not part of the run.
+    if "workbuddy" in by_ecosystem:
+        summary["workbuddy"] = by_ecosystem["workbuddy"]
+    view["summary"] = summary
     view["sections"] = [
         {
             "heading": "全量技能清单",

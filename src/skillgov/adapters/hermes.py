@@ -22,7 +22,7 @@ from ..errors import DegradeReason
 from ..logging_setup import Reporter
 from ..normalize.model import SkillRecord, SourceEvidence, UsageRecord
 from ..readonly import sqlite_ro
-from .fs_scan import scan_skills, scanned_to_record
+from .fs_scan import ARCHIVE_MARKERS, scan_skills, scanned_to_record
 
 
 class HermesAdapter:
@@ -56,7 +56,7 @@ class HermesAdapter:
         if not base.is_dir():
             self.reporter.degrade(DegradeReason.MISSING_SKILLS_DIR, HERMES_SKILLS_SUBPATH)
             return []
-        scanned = scan_skills(base, archive_markers=(".archive",))
+        scanned = scan_skills(base, archive_markers=ARCHIVE_MARKERS)
         return [
             scanned_to_record(
                 self.ecosystem,

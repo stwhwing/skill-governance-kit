@@ -38,6 +38,11 @@ def openclaw_root() -> Path:
 
 
 @pytest.fixture
+def workbuddy_root() -> Path:
+    return FIXTURES_DIR / "workbuddy-root"
+
+
+@pytest.fixture
 def degenerate_root() -> Path:
     return FIXTURES_DIR / "degenerate"
 

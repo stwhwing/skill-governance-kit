@@ -1,6 +1,6 @@
 # 技能治理综合报告 (report)
 
-**generated_at**: 2026-09-11T02:15:13Z
+**generated_at**: 2026-09-14T01:48:15Z
 
 - **total**: 5
 - **sources**: hermes, openclaw
@@ -10,11 +10,11 @@
 
 | skill_id | name | ecosystem | presence | category | path | created_at | version | description | use_count | evidence_source | mirror_of | drift |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| hermes:archive-demo-old | demo-old | hermes | archived | .archive | skills/.archive/demo-old | 2026-09-11T02:13:24Z | 0.1.0 | Archived demo skill retained for evolution evidence. | 0 | none | - | - |
-| hermes:demo-alpha | demo-alpha | hermes | active | demo-alpha | skills/demo-alpha | 2026-09-11T02:13:24Z | 1.0.0 | Alpha demo skill for governance tests. | 7 | usage_json | openclaw:demo-alpha | clean |
-| hermes:demo-beta | demo-beta | hermes | active | demo-beta | skills/demo-beta | 2026-09-11T02:13:24Z | 2.0.0 | Beta demo skill that is never used in the fixture window. | 0 | usage_json | - | - |
-| openclaw:demo-alpha | demo-alpha | openclaw | active | demo-alpha | workspace/skills/demo-alpha | 2026-09-11T02:13:24Z | 1.0.0 | Alpha demo skill for governance tests. | 1 | trajectory | hermes:demo-alpha | clean |
-| openclaw:demo-gamma | demo-gamma | openclaw | active | demo-gamma | workspace/skills/demo-gamma | 2026-09-11T02:13:24Z | 1.2.0 | Gamma demo skill exercised through trajectory evidence. | 1 | trajectory | - | - |
+| hermes:archive-demo-old | demo-old | hermes | archived | .archive | skills/.archive/demo-old | 2026-09-11T02:09:51Z | 0.1.0 | Archived demo skill retained for evolution evidence. | 0 | none | - | - |
+| hermes:demo-alpha | demo-alpha | hermes | active | demo-alpha | skills/demo-alpha | 2026-09-11T02:09:51Z | 1.0.0 | Alpha demo skill for governance tests. | 7 | usage_json | openclaw:demo-alpha | clean |
+| hermes:demo-beta | demo-beta | hermes | active | demo-beta | skills/demo-beta | 2026-09-11T02:09:51Z | 2.0.0 | Beta demo skill that is never used in the fixture window. | 0 | usage_json | - | - |
+| openclaw:demo-alpha | demo-alpha | openclaw | active | demo-alpha | workspace/skills/demo-alpha | 2026-09-11T02:09:51Z | 1.0.0 | Alpha demo skill for governance tests. | 1 | trajectory | hermes:demo-alpha | clean |
+| openclaw:demo-gamma | demo-gamma | openclaw | active | demo-gamma | workspace/skills/demo-gamma | 2026-09-11T02:09:51Z | 1.2.0 | Gamma demo skill exercised through trajectory evidence. | 1 | trajectory | - | - |
 
 ## 零使用清单 (window=2025-01-01)
 

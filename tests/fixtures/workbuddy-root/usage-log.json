@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "skills": {
+    "wb-demo": {
+      "type": "skill",
+      "firstSeenDate": "2025-04-01",
+      "recentDates": ["2025-04-02", "2025-04-03", "2025-04-05"],
+      "lastUsedDate": "2025-04-05"
+    },
+    "wb-idle": {
+      "type": "skill",
+      "firstSeenDate": "2025-04-01",
+      "recentDates": [],
+      "lastUsedDate": null
+    },
+    "wb-orphan": {
+      "type": "skill",
+      "firstSeenDate": "2025-04-01",
+      "recentDates": ["2025-04-02"],
+      "lastUsedDate": "2025-04-02"
+    }
+  },
+  "mcps": {},
+  "activeDays": ["2025-04-02", "2025-04-03", "2025-04-05"],
+  "dismissedIdle": []
+}

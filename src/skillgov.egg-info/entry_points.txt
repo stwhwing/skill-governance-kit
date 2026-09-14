@@ -1,0 +1,2 @@
+[console_scripts]
+skillgov = skillgov.cli.main:main

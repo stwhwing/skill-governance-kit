@@ -31,6 +31,11 @@ from ..sanitize import sanitize_obj
 from ..store.json_store import write_text_atomic
 
 # Caliber declarations fixed into every report footer (and mirrored in README).
+#
+# These five lines are the v0.1 contract and MUST stay stable: a run that does
+# not include the WorkBuddy ecosystem has to remain byte-identical to v0.1
+# (spec E). The WorkBuddy caliber line is therefore *conditionally* appended —
+# see :func:`caliber_footer`.
 CALIBER_FOOTER: tuple[str, ...] = (
     "口径声明：Hermes 使用 = skill_view 标准加载（不含 read_file / terminal 直读）。",
     "口径声明：OpenClaw 使用 = 仅 trajectory 的 arguments.path 严口径计入 use_count；消息正文引用仅作旁证。",
@@ -38,6 +43,55 @@ CALIBER_FOOTER: tuple[str, ...] = (
     "口径声明：全程只读采集；缺失数据源将降级并把原因记录到 warnings。",
     "口径声明：同输入重复运行，输出除 generated_at 外逐字节一致（幂等）。",
 )
+
+# WorkBuddy caliber (spec A / README §WorkBuddy). Kept in sync with the README
+# wording; appended only when the run contains the WorkBuddy ecosystem.
+WORKBUDDY_CALIBER_LINE = (
+    "口径声明：WorkBuddy 使用 = usage-log.json 台账 recentDates 的使用天数"
+    "（按使用天数计，非调用次数）；台账不跟踪 view/patch，view_count / patch_count 恒为 0；"
+    "last_used_at = lastUsedDate 当日 00:00:00Z；台账键在技能树中无对应目录者记 "
+    "orphan_ledger_entry 告警且不生成记录。"
+)
+
+
+def caliber_footer(include_workbuddy: bool = False) -> tuple[str, ...]:
+    """Return the caliber footer for a run.
+
+    Without WorkBuddy the footer is exactly the v0.1 five lines. The sixth
+    (WorkBuddy) line is appended **only when the WorkBuddy ecosystem is part of
+    the run** — that is, when ``<workbuddy-root>/skills`` exists and therefore
+    ``"workbuddy"`` enters ``RunResult.sources``. This is a statement about the
+    run's *coverage*, not about the ``--workbuddy-root`` argument: a root whose
+    ``skills`` directory is missing (or no root at all) keeps the five v0.1
+    lines, while a root with an existing but empty/unusable tree still counts
+    and gets the sixth line.
+    """
+    if include_workbuddy:
+        return CALIBER_FOOTER + (WORKBUDDY_CALIBER_LINE,)
+    return CALIBER_FOOTER
+
+
+def has_workbuddy_ecosystem(records: Iterable[Any]) -> bool:
+    """Whether any record in *records* belongs to the WorkBuddy ecosystem."""
+    return any(getattr(record, "ecosystem", None) == "workbuddy" for record in records)
+
+
+def resolve_include_workbuddy(
+    records: Iterable[Any], explicit: Union[bool, None] = None
+) -> bool:
+    """Decide whether the WorkBuddy caliber line applies.
+
+    ``explicit`` (from ``RunResult.sources``) wins when provided; otherwise the
+    presence of a WorkBuddy record decides. The explicit criterion is the
+    authoritative one for the CLI: ``"workbuddy"`` in ``sources`` means the
+    WorkBuddy *skills directory exists*, so a present-but-empty tree still
+    counts, whereas a missing ``skills`` directory never enters ``sources`` and
+    therefore never adds the sixth line.
+    """
+    if explicit is not None:
+        return explicit
+    return has_workbuddy_ecosystem(records)
+
 
 VALID_FORMATS = ("md", "json")
 

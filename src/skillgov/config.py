@@ -18,11 +18,13 @@ from typing import Optional, Union
 HERMES_SKILLS_SUBPATH = "skills"
 OPENCLAW_SKILLS_SUBPATH = "workspace/skills"
 OPENCLAW_AGENTS_SUBPATH = "agents"
+WORKBUDDY_SKILLS_SUBPATH = "skills"
 
 # Known auxiliary file names inside a skills tree.
 HERMES_USAGE_FILENAME = ".usage.json"
 HERMES_STATE_DB_FILENAME = "state.db"
 OPENCLAW_STORE_LOCK_FILENAME = ".skills_store_lock.json"
+WORKBUDDY_USAGE_LOG_FILENAME = "usage-log.json"
 
 DEFAULT_OUT_DIR = "out"
 DEFAULT_DESCRIPTION_LIMIT = 200
@@ -70,12 +72,16 @@ class Config:
 
     hermes_root: Optional[Path] = None
     openclaw_root: Optional[Path] = None
+    workbuddy_root: Optional[Path] = None
     out_dir: Path = field(default_factory=lambda: Path(DEFAULT_OUT_DIR))
     since: Optional[str] = None
     max_bytes: Optional[int] = None
     formats: tuple[str, ...] = DEFAULT_FORMATS
     description_limit: int = DEFAULT_DESCRIPTION_LIMIT
     enable_hermes_state_db: bool = True
+    # When True, collect() snapshots every configured root before and after the
+    # run and raises ReadOnlyViolation on any difference (opt-in, v0.2).
+    assert_readonly: bool = False
 
     def hermes_skills_dir(self) -> Optional[Path]:
         """Return ``<hermes_root>/skills`` (or ``None`` when unset)."""
@@ -94,3 +100,9 @@ class Config:
         if self.openclaw_root is None:
             return None
         return self.openclaw_root / OPENCLAW_AGENTS_SUBPATH
+
+    def workbuddy_skills_dir(self) -> Optional[Path]:
+        """Return ``<workbuddy_root>/skills`` (or ``None``)."""
+        if self.workbuddy_root is None:
+            return None
+        return self.workbuddy_root / WORKBUDDY_SKILLS_SUBPATH

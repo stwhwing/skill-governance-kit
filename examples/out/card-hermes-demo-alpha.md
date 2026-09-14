@@ -1,6 +1,6 @@
 # 技能档案卡 (card): hermes:demo-alpha
 
-**generated_at**: 2026-09-11T02:15:14Z
+**generated_at**: 2026-09-14T01:48:17Z
 
 - **found**: True
 - **skill_id**: hermes:demo-alpha
@@ -13,7 +13,7 @@
 - **category**: demo-alpha
 - **path**: skills/demo-alpha
 - **version**: 1.0.0
-- **created_at**: 2026-09-11T02:13:24Z
+- **created_at**: 2026-09-11T02:09:51Z
 - **installed_at**: -
 - **description**: Alpha demo skill for governance tests.
 - **mirror_of**: openclaw:demo-alpha

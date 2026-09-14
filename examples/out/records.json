@@ -1,0 +1,160 @@
+{
+  "records": [
+    {
+      "category": ".archive",
+      "created_at": "2026-09-11T02:09:51Z",
+      "description": "Archived demo skill retained for evolution evidence.",
+      "drift": null,
+      "ecosystem": "hermes",
+      "installed_at": null,
+      "mirror_of": null,
+      "name": "demo-old",
+      "path": "skills/.archive/demo-old",
+      "presence": "archived",
+      "provenance": [],
+      "skill_id": "hermes:archive-demo-old",
+      "usage": {
+        "confidence": "C",
+        "evidence_source": "none",
+        "last_used_at": null,
+        "patch_count": 0,
+        "state": null,
+        "use_count": 0,
+        "view_count": 0
+      },
+      "version": "0.1.0"
+    },
+    {
+      "category": "demo-alpha",
+      "created_at": "2026-09-11T02:09:51Z",
+      "description": "Alpha demo skill for governance tests.",
+      "drift": "clean",
+      "ecosystem": "hermes",
+      "installed_at": null,
+      "mirror_of": "openclaw:demo-alpha",
+      "name": "demo-alpha",
+      "path": "skills/demo-alpha",
+      "presence": "active",
+      "provenance": [
+        {
+          "detail": "created_by=curator; created_at=2025-01-01T00:00:00Z",
+          "kind": "curator",
+          "observed_at": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "skill_id": "hermes:demo-alpha",
+      "usage": {
+        "confidence": "A",
+        "evidence_source": "usage_json",
+        "last_used_at": "2025-02-01T00:00:00Z",
+        "patch_count": 3,
+        "state": "active",
+        "use_count": 7,
+        "view_count": 7
+      },
+      "version": "1.0.0"
+    },
+    {
+      "category": "demo-beta",
+      "created_at": "2026-09-11T02:09:51Z",
+      "description": "Beta demo skill that is never used in the fixture window.",
+      "drift": null,
+      "ecosystem": "hermes",
+      "installed_at": null,
+      "mirror_of": null,
+      "name": "demo-beta",
+      "path": "skills/demo-beta",
+      "presence": "active",
+      "provenance": [
+        {
+          "detail": "created_by=curator; created_at=2025-01-01T00:00:00Z",
+          "kind": "curator",
+          "observed_at": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "skill_id": "hermes:demo-beta",
+      "usage": {
+        "confidence": "A",
+        "evidence_source": "usage_json",
+        "last_used_at": null,
+        "patch_count": 0,
+        "state": "active",
+        "use_count": 0,
+        "view_count": 0
+      },
+      "version": "2.0.0"
+    },
+    {
+      "category": "demo-alpha",
+      "created_at": "2026-09-11T02:09:51Z",
+      "description": "Alpha demo skill for governance tests.",
+      "drift": "clean",
+      "ecosystem": "openclaw",
+      "installed_at": null,
+      "mirror_of": "hermes:demo-alpha",
+      "name": "demo-alpha",
+      "path": "workspace/skills/demo-alpha",
+      "presence": "active",
+      "provenance": [
+        {
+          "detail": "source=local; version=1.0.0; installedAt=2025-01-01T00:00:00Z",
+          "kind": "store_lock",
+          "observed_at": "2025-01-01T00:00:00Z"
+        }
+      ],
+      "skill_id": "openclaw:demo-alpha",
+      "usage": {
+        "confidence": "A",
+        "evidence_source": "trajectory",
+        "last_used_at": null,
+        "patch_count": 0,
+        "state": null,
+        "use_count": 1,
+        "view_count": 1
+      },
+      "version": "1.0.0"
+    },
+    {
+      "category": "demo-gamma",
+      "created_at": "2026-09-11T02:09:51Z",
+      "description": "Gamma demo skill exercised through trajectory evidence.",
+      "drift": null,
+      "ecosystem": "openclaw",
+      "installed_at": null,
+      "mirror_of": null,
+      "name": "demo-gamma",
+      "path": "workspace/skills/demo-gamma",
+      "presence": "active",
+      "provenance": [
+        {
+          "detail": "source=local; version=1.2.0; installedAt=2025-01-02T00:00:00Z",
+          "kind": "store_lock",
+          "observed_at": "2025-01-02T00:00:00Z"
+        },
+        {
+          "detail": "message body reference x1 (corroboration only, excluded from use_count)",
+          "kind": "trajectory_mention",
+          "observed_at": null
+        }
+      ],
+      "skill_id": "openclaw:demo-gamma",
+      "usage": {
+        "confidence": "A",
+        "evidence_source": "trajectory",
+        "last_used_at": null,
+        "patch_count": 0,
+        "state": null,
+        "use_count": 1,
+        "view_count": 1
+      },
+      "version": "1.2.0"
+    }
+  ],
+  "sources": [
+    "hermes",
+    "openclaw"
+  ],
+  "warnings": [
+    "bad_jsonl: 1 malformed line(s) skipped"
+  ]
+}

@@ -40,6 +40,7 @@ from ..errors import (
 from ..logging_setup import Reporter, error
 from ..normalize.model import RunResult
 from ..normalize.merge import apply_usage_and_provenance, merge_records, pair_mirrors
+from ..readonly import assert_no_writes, snapshot_tree
 from ..report.card import build_card
 from ..report.inventory import build_inventory
 from ..report.mirror import build_mirror
@@ -50,6 +51,7 @@ from ..store.ids import make_skill_id, rel_path_slug, slug_safe
 from ..store.json_store import write_json_atomic
 from ..adapters.hermes import HermesAdapter
 from ..adapters.openclaw import OpenClawAdapter
+from ..adapters.workbuddy import WorkBuddyAdapter
 
 SUBCOMMANDS = ("inventory", "usage", "card", "mirror", "report")
 
@@ -59,7 +61,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="skillgov",
         description=(
-            "Read-only, deterministic skill-governance toolkit for Hermes + OpenClaw."
+            "Read-only, deterministic skill-governance toolkit for "
+            "Hermes, OpenClaw and WorkBuddy."
         ),
     )
     parser.add_argument(
@@ -72,9 +75,18 @@ def build_parser() -> argparse.ArgumentParser:
         target.add_argument(
             "--openclaw-root", default=None, help="OpenClaw root (contains workspace/skills, agents/)"
         )
+        target.add_argument(
+            "--workbuddy-root", default=None, help="WorkBuddy root (contains skills/, usage-log.json)"
+        )
         target.add_argument("--out", default=DEFAULT_OUT_DIR, help="output directory")
         target.add_argument(
             "--format", default=",".join(DEFAULT_FORMATS), help="comma list: md,json"
+        )
+        target.add_argument(
+            "--assert-readonly",
+            action="store_true",
+            default=False,
+            help="snapshot every configured root before/after the run; fail (exit 1) on any change",
         )
 
     inventory = subparsers.add_parser("inventory", help="full skill inventory")
@@ -129,11 +141,13 @@ def _build_config(args: argparse.Namespace) -> Config:
     return Config(
         hermes_root=normalize_root(getattr(args, "hermes_root", None)),
         openclaw_root=normalize_root(getattr(args, "openclaw_root", None)),
+        workbuddy_root=normalize_root(getattr(args, "workbuddy_root", None)),
         out_dir=out_dir,
         since=since,
         max_bytes=max_bytes,
         formats=formats,
         description_limit=DEFAULT_DESCRIPTION_LIMIT,
+        assert_readonly=bool(getattr(args, "assert_readonly", False)),
     )
 
 
@@ -152,7 +166,23 @@ def _resolve_skill_id(requested: str) -> str:
 
 
 def collect(config: Config, reporter: Reporter) -> RunResult:
-    """Run the read-only collection pipeline and return a :class:`RunResult`."""
+    """Run the read-only collection pipeline and return a :class:`RunResult`.
+
+    When ``config.assert_readonly`` is set, every configured root is snapshotted
+    before and after the run; any difference raises
+    :class:`~skillgov.errors.ReadOnlyViolation` (an internal error -> exit 1).
+    """
+    guarded_roots = [
+        root
+        for root in (config.hermes_root, config.openclaw_root, config.workbuddy_root)
+        if root is not None
+    ]
+    before_snapshots = (
+        [snapshot_tree(root) for root in guarded_roots]
+        if config.assert_readonly
+        else []
+    )
+
     records = []
     usage_by_ecosystem: dict[str, dict] = {}
     provenance_by_ecosystem: dict[str, dict] = {}
@@ -190,9 +220,29 @@ def collect(config: Config, reporter: Reporter) -> RunResult:
     else:
         reporter.degrade(DegradeReason.MISSING_ROOT, "openclaw")
 
+    # WorkBuddy (v0.2) is opt-in: an absent --workbuddy-root keeps the run
+    # byte-identical to v0.1 (no extra degrade warning), while a provided root
+    # degrades exactly like the other ecosystems when its tree is unusable.
+    if config.workbuddy_root is not None:
+        if config.workbuddy_skills_dir() is not None and config.workbuddy_skills_dir().is_dir():
+            adapter = WorkBuddyAdapter(
+                reporter,
+                description_limit=config.description_limit,
+            )
+            records.extend(adapter.discover(config.workbuddy_root))
+            usage_by_ecosystem["workbuddy"] = adapter.usage(config.workbuddy_root)
+            provenance_by_ecosystem["workbuddy"] = adapter.provenance(config.workbuddy_root)
+            sources.append("workbuddy")
+        else:
+            reporter.degrade(DegradeReason.MISSING_SKILLS_DIR, "workbuddy")
+
     merged = merge_records([records])
     apply_usage_and_provenance(merged, usage_by_ecosystem, provenance_by_ecosystem)
     pair_mirrors(merged)
+
+    if config.assert_readonly:
+        for root, before in zip(guarded_roots, before_snapshots):
+            assert_no_writes(before, snapshot_tree(root))
 
     return RunResult(
         records=merged,
@@ -208,11 +258,22 @@ def _write_command_outputs(
     """Build and write the view(s) for the requested subcommand."""
     command = args.command
     warnings = result.warnings
+    # The WorkBuddy caliber line is injected only when the run actually covers
+    # the WorkBuddy ecosystem, so a Hermes+OpenClaw-only run stays byte-identical
+    # to v0.1 (spec E). ``sources`` is authoritative and reflects *coverage*:
+    # "workbuddy" is appended only when <workbuddy-root>/skills exists, so a
+    # present-but-empty tree still counts while a root whose ``skills``
+    # directory is missing does NOT — it never enters ``sources`` and therefore
+    # never appends the sixth line.
+    include_workbuddy = "workbuddy" in result.sources
     wrote: list[Path] = []
 
     if command == "inventory":
         view = build_inventory(
-            result.records, generated_at=result.generated_at, warnings=warnings
+            result.records,
+            generated_at=result.generated_at,
+            warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         wrote = write_view(view, config.out_dir, "inventory", config.formats)
     elif command == "usage":
@@ -221,6 +282,7 @@ def _write_command_outputs(
             generated_at=result.generated_at,
             since=config.since,
             warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         wrote = write_view(view, config.out_dir, "usage", config.formats)
     elif command == "card":
@@ -241,26 +303,37 @@ def _write_command_outputs(
             record.skill_id,
             generated_at=result.generated_at,
             warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         basename = "card-" + slug_safe(record.skill_id)
         wrote = write_view(view, config.out_dir, basename, config.formats)
     elif command == "mirror":
         view = build_mirror(
-            result.records, generated_at=result.generated_at, warnings=warnings
+            result.records,
+            generated_at=result.generated_at,
+            warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         wrote = write_view(view, config.out_dir, "mirror", config.formats)
     elif command == "report":
         inventory = build_inventory(
-            result.records, generated_at=result.generated_at, warnings=warnings
+            result.records,
+            generated_at=result.generated_at,
+            warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         usage = build_usage(
             result.records,
             generated_at=result.generated_at,
             since=config.since,
             warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         mirror = build_mirror(
-            result.records, generated_at=result.generated_at, warnings=warnings
+            result.records,
+            generated_at=result.generated_at,
+            warnings=warnings,
+            include_workbuddy_caliber=include_workbuddy,
         )
         combined = {
             "title": "技能治理综合报告 (report)",

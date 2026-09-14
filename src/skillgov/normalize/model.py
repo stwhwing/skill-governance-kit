@@ -56,7 +56,7 @@ class SkillRecord:
 
     skill_id: str
     name: str
-    ecosystem: str  # hermes | openclaw
+    ecosystem: str  # hermes | openclaw | workbuddy
     path: str  # relative to the configurable root, never absolute
     presence: str  # active | archived
     category: str  # first path segment under the skills tree
