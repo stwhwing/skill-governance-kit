@@ -23,6 +23,7 @@ def _run_subprocess(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 

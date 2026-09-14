@@ -68,6 +68,7 @@ def run_cli(args, cwd) -> subprocess.CompletedProcess:
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 

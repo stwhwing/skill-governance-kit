@@ -3,7 +3,7 @@
 Reads are plain read-only opens. Writes are atomic (temp file + ``os.replace``)
 and target only the output directory — never an inspected tree. Serialization is
 deterministic (``sort_keys=True``, UTF-8, 2-space indent) so two runs over the
-same input differ, at most, by a single ``generated_at`` field.
+same input differ, at most, by the two environment-dependent fields ``generated_at`` and ``created_at`` (the latter is null on platforms without file-birth-time support).
 """
 
 from __future__ import annotations

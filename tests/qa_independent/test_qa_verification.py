@@ -47,7 +47,7 @@ def _run_cli(args, cwd):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC_DIR)
     return subprocess.run([sys.executable, "-m", "skillgov", *args],
-                          cwd=str(cwd), env=env, capture_output=True, text=True)
+                          cwd=str(cwd), env=env, capture_output=True, text=True, encoding="utf-8")
 
 
 def _strip_generated(text: str) -> str:
@@ -120,13 +120,13 @@ def test_three_runs_are_byte_identical_except_generated_at(basic_roots, tmp_path
         out = tmp_path / f"out{i}"
         assert main(["report", "--hermes-root", str(hroot), "--openclaw-root", str(oroot),
                      "--out", str(out), "--format", "json"]) == 0
-        blobs.append({n: _strip_generated((out / f"{n}.json").read_text())
+        blobs.append({n: _strip_generated((out / f"{n}.json").read_text(encoding="utf-8"))
                       for n in ("inventory", "usage", "mirror", "report")})
         raws.append(out)
     assert blobs[0] == blobs[1] == blobs[2]
     # the ONLY differing raw line is generated_at
-    a = (raws[0] / "report.json").read_text().splitlines()
-    b = (raws[1] / "report.json").read_text().splitlines()
+    a = (raws[0] / "report.json").read_text(encoding="utf-8").splitlines()
+    b = (raws[1] / "report.json").read_text(encoding="utf-8").splitlines()
     diff = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
     assert all("generated_at" in a[i] for i in diff)
 
@@ -142,7 +142,7 @@ def test_order_is_stable_under_directory_name_shuffle(basic_roots, tmp_path):
         out = tmp_path / f"s{i}"
         assert main(["inventory", "--hermes-root", str(hroot), "--out", str(out),
                      "--format", "json"]) == 0
-        doc = json.loads((out / "inventory.json").read_text())
+        doc = json.loads((out / "inventory.json").read_text(encoding="utf-8"))
         ids.append([row[0] for row in doc["sections"][0]["rows"]])
     assert ids[0] == ids[1] == sorted(ids[0])
 
